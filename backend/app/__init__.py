@@ -1,1 +1,1 @@
-# LingoLens Reader backend package
+# LecteurAide Reader backend package

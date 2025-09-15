@@ -7,7 +7,7 @@ from .api import books, progress, admin
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="LingoLens Reader")
+    app = FastAPI(title="LecteurAide Reader")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000"],
