@@ -2,7 +2,7 @@ from celery import Celery
 from ..config import get_settings
 
 settings = get_settings()
-celery_app = Celery("lingolens", broker=settings.redis_url)
+celery_app = Celery("lecteuraide", broker=settings.redis_url)
 
 
 @celery_app.task

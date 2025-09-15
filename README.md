@@ -1,4 +1,4 @@
-# LingoLens Reader
+# LecteurAide Reader
 
 Production-ready scaffold for bilingual reading app using FastAPI + Next.js.
 
