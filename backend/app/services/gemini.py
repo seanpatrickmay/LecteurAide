@@ -99,7 +99,7 @@ class GeminiService:
             "Given the original French scene text and English translations, identify key vocabulary terms.\n"
             "Return JSON with an array named 'vocabulary'. Each item must have:\n"
             "- term: the French word or expression\n"
-            "- part_of_speech: optional abbreviated part of speech (e.g., 'n.', 'v.', 'adj.')\n"
+            "- part_of_speech: part of speech (e.g., 'noun', 'verb', 'adjective')\n"
             "- definition: short English definition\n"
             "- example_sentence: the French sentence using the term\n"
             "Focus on non-trivial, scene-specific vocabulary.\n"
