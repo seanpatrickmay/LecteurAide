@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { BookSummary, fetchBooks } from "../lib/api";
+import { BookSummary, deleteBook, fetchBooks } from "../lib/api";
 
 const LibraryPage = () => {
   const [books, setBooks] = useState<BookSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -32,6 +33,22 @@ const LibraryPage = () => {
     };
   }, []);
 
+  const handleDelete = async (book: BookSummary) => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${book.title}"?`);
+    if (!confirmed) {
+      return;
+    }
+    setDeletingId(book.id);
+    try {
+      await deleteBook(book.id);
+      setBooks((prev) => prev.filter((item) => item.id !== book.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete the book.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <section>
       <h1>Your Library</h1>
@@ -46,12 +63,26 @@ const LibraryPage = () => {
       <div className="library-grid">
         {books.map((book) => {
           const createdDate = new Date(book.created_at);
+          const isDeleting = deletingId === book.id;
           return (
-            <Link key={book.id} href={`/books/${book.id}`} className="card library-card">
-              <h2>{book.title}</h2>
-              <p className="muted">Added {createdDate.toLocaleString()}</p>
-              <p>{book.scene_count} scenes processed</p>
-            </Link>
+            <div key={book.id} className="card library-card">
+              <Link href={`/books/${book.id}`} className="library-card-link">
+                <h2>{book.title}</h2>
+                <p className="muted">Added {createdDate.toLocaleString()}</p>
+                <p>{book.scene_count} scenes processed</p>
+              </Link>
+              <div className="library-card-actions">
+                <button
+                  type="button"
+                  className="button danger"
+                  onClick={() => handleDelete(book)}
+                  disabled={isDeleting}
+                  aria-label={`Delete book ${book.title}`}
+                >
+                  {isDeleting ? "Deleting…" : "Delete book"}
+                </button>
+              </div>
+            </div>
           );
         })}
       </div>

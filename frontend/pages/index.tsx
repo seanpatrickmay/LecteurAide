@@ -8,7 +8,10 @@ const UploadPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
+  const [progress, setProgress] = useState<{ processed: number; total: number }>({
+    processed: 0,
+    total: 0,
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -44,7 +47,7 @@ const UploadPage = () => {
     } finally {
       setIsSubmitting(false);
       setIsProcessing(false);
-      setProgress(null);
+      setProgress({ processed: 0, total: 0 });
     }
   };
 
@@ -85,7 +88,7 @@ const UploadPage = () => {
           {isSubmitting ? "Uploading…" : "Upload Book"}
         </button>
       </form>
-      {isProcessing && progress && (
+      {isProcessing && (
         <div className="card progress-card">
           <div className="progress-label">
             {progress.total > 0

@@ -129,6 +129,23 @@ def get_book(
     return _book_to_schema(result)
 
 
+@router.delete(
+    "/{book_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+)
+def delete_book(
+    book_id: int,
+    db: Session = Depends(get_session),
+):
+    book = db.get(Book, book_id)
+    if not book:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found.")
+    db.delete(book)
+    db.commit()
+    return None
+
+
 def _book_to_schema(book: Book) -> BookItem:
     scenes = []
     for scene in sorted(book.scenes, key=lambda s: s.index):

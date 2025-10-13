@@ -11,6 +11,15 @@ class TextChunk:
     text: str
 
 
+@dataclass(slots=True)
+class SentenceChunk:
+    index: int
+    sentence_start: int  # inclusive
+    sentence_end: int  # exclusive
+    english_sentences: list[str]
+    french_sentences: list[str]
+
+
 def chunk_text(
     text: str,
     max_tokens: int,
@@ -57,5 +66,79 @@ def chunk_text(
             break
 
         start = max(end - overlap_chars, 0)
+
+    return chunks
+
+
+def chunk_sentence_pairs(
+    french_sentences: list[str],
+    english_sentences: list[str],
+    max_tokens: int,
+    overlap_ratio: float = 0.1,
+    min_chunk_tokens: int = 128,
+) -> list[SentenceChunk]:
+    """
+    Group aligned French/English sentences into chunks sized for LLM prompts.
+
+    Chunk sizing uses the translated (English) sentence lengths to approximate
+    token counts, ensuring the model sees English text for segmentation while
+    preserving the mapping back to the original French sentences.
+    """
+    if not french_sentences:
+        return []
+
+    tokens_per_chunk = max(max_tokens, min_chunk_tokens)
+    approx_chars = tokens_per_chunk * 4
+
+    total_sentences = len(french_sentences)
+    # Ensure the English list covers all sentences to avoid index checks later.
+    if len(english_sentences) < total_sentences:
+        english_sentences = english_sentences + [""] * (total_sentences - len(english_sentences))
+
+    chunks: list[SentenceChunk] = []
+    start = 0
+    chunk_index = 0
+
+    while start < total_sentences:
+        end = start
+        english_chunk: list[str] = []
+        french_chunk: list[str] = []
+        measured_chars = 0
+
+        while end < total_sentences:
+            fr_sentence = french_sentences[end]
+            en_sentence = english_sentences[end]
+
+            french_chunk.append(fr_sentence)
+            english_chunk.append(en_sentence)
+
+            sentence_chars = len(en_sentence) if en_sentence else len(fr_sentence)
+            # Avoid zero-length increments so we always advance.
+            measured_chars += max(sentence_chars, 1)
+            end += 1
+
+            if measured_chars >= approx_chars:
+                break
+
+        if not french_chunk:
+            break
+
+        chunks.append(
+            SentenceChunk(
+                index=chunk_index,
+                sentence_start=start,
+                sentence_end=end,
+                english_sentences=english_chunk,
+                french_sentences=french_chunk,
+            )
+        )
+        chunk_index += 1
+
+        if end >= total_sentences:
+            break
+
+        overlap_sentences = int((end - start) * overlap_ratio)
+        next_start = max(end - overlap_sentences, start + 1)
+        start = min(next_start, total_sentences)
 
     return chunks

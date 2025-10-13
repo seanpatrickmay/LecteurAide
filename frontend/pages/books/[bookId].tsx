@@ -88,47 +88,69 @@ const BookViewerPage = () => {
       )}
       {!isLoading && !error && book && currentScene && (
         <div className="viewer-layout">
-          <article className="scene-container">
+          <div className="scene-main">
             <header className="scene-header">
-              <div>
-                <h1 className="scene-title">{currentScene.title || `Scene ${currentScene.index}`}</h1>
-                <p className="muted">
-                  Scene {currentScene.index} of {book.scenes.length}
-                </p>
-              </div>
-              <div className="scene-pagination">
-                <button
-                  className="button secondary"
-                  onClick={goToPrevious}
-                  disabled={sceneIndex === 0}
-                  aria-label="Previous scene"
-                >
-                  ← Previous
-                </button>
-                <button
-                  className="button"
-                  onClick={goToNext}
-                  disabled={sceneIndex >= book.scenes.length - 1}
-                  aria-label="Next scene"
-                >
-                  Next →
-                </button>
-              </div>
+              <h1 className="scene-title">{currentScene.title || `Scene ${currentScene.index}`}</h1>
+              <p className="muted">
+                Scene {currentScene.index} of {book.scenes.length}
+              </p>
             </header>
-            {currentScene.summary && <p className="muted">{currentScene.summary}</p>}
+            <div className="scene-navigation top">
+              <button
+                className="nav-button"
+                onClick={goToPrevious}
+                disabled={sceneIndex === 0}
+                aria-label="Previous scene"
+              >
+                ←
+              </button>
+              <button
+                className="nav-button"
+                onClick={goToNext}
+                disabled={sceneIndex >= book.scenes.length - 1}
+                aria-label="Next scene"
+              >
+                →
+              </button>
+            </div>
+            {currentScene.summary && <p className="muted scene-summary">{currentScene.summary}</p>}
             <div className="scene-body">
               {currentScene.sentences.map((sentence) => (
-                <button
+                <span
                   key={sentence.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   className={`sentence${sentence.id === selectedSentenceId ? " active" : ""}`}
                   onClick={() => setSelectedSentenceId(sentence.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedSentenceId(sentence.id);
+                    }
+                  }}
                   aria-pressed={sentence.id === selectedSentenceId}
                 >
                   {sentence.original_text}
-                  {" "}
-                </button>
+                </span>
               ))}
+            </div>
+            <div className="scene-navigation">
+              <button
+                className="nav-button"
+                onClick={goToPrevious}
+                disabled={sceneIndex === 0}
+                aria-label="Previous scene"
+              >
+                ←
+              </button>
+              <button
+                className="nav-button"
+                onClick={goToNext}
+                disabled={sceneIndex >= book.scenes.length - 1}
+                aria-label="Next scene"
+              >
+                →
+              </button>
             </div>
             {questions.length > 0 && (
               <section className="questions-section">
@@ -170,7 +192,7 @@ const BookViewerPage = () => {
                       )}
                       {questionResults[question.id] === false && (
                         <p className="question-feedback error">
-                          Ce n'est pas exact. La bonne réponse : {" "}
+                          Ce n'est pas exact. La bonne réponse :{" "}
                           {question.options.find((option) => option.is_correct)?.text}
                         </p>
                       )}
@@ -179,9 +201,9 @@ const BookViewerPage = () => {
                 </ol>
               </section>
             )}
-          </article>
-          <aside className="sidebar">
-            <div>
+          </div>
+          <aside className="scene-side">
+            <div className="scene-bubble scene-translation">
               <h3>Sentence Translation</h3>
               {selectedSentence ? (
                 <p className="translation">{selectedSentence.translated_text}</p>
@@ -189,7 +211,7 @@ const BookViewerPage = () => {
                 <p className="muted">Select a sentence to reveal its English translation.</p>
               )}
             </div>
-            <div>
+            <div className="scene-bubble scene-vocab">
               <h3>Vocabulary Highlights</h3>
               {currentScene.vocabulary.length === 0 ? (
                 <p className="muted">No key vocabulary captured in this scene.</p>

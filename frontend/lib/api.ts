@@ -71,6 +71,16 @@ export async function fetchBook(bookId: number | string): Promise<Book> {
   return handleResponse<Book>(res);
 }
 
+export async function deleteBook(bookId: number | string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/books/${bookId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(message || `Delete failed with ${res.status}`);
+  }
+}
+
 export type UploadProgressHandler = (processedChunks: number, totalChunks: number) => void;
 
 export async function uploadBook(

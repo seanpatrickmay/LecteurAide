@@ -44,19 +44,48 @@ class GeminiService:
 
         raise RuntimeError("Vertex AI request failed after retries.")
 
-    def segment_chunk(self, text: str, chunk_index: int, total_chunks: int) -> list[dict[str, str]]:
+    def segment_chunk(
+        self,
+        english_sentences: list[str],
+        french_sentences: list[str],
+        chunk_index: int,
+        total_chunks: int,
+        previous_scene_summary: str | None = None,
+    ) -> list[dict[str, object]]:
+        numbered_sentences = []
+        for idx, (english, french) in enumerate(zip(english_sentences, french_sentences), start=1):
+            english_text = (english or "").strip()
+            fallback = (french or "").strip()
+            if english_text:
+                numbered_sentences.append(f"{idx}. {english_text}")
+            elif fallback:
+                numbered_sentences.append(f"{idx}. [French] {fallback}")
+            else:
+                numbered_sentences.append(f"{idx}.")
+        sentences_block = "\n".join(numbered_sentences)
+        summary_block = (
+            f"Summary of the previous scene:\n{previous_scene_summary.strip()}\n\n"
+            if previous_scene_summary and previous_scene_summary.strip()
+            else ""
+        )
         prompt = (
             "You are segmenting a French novel into concise scenes.\n"
             f"You are analysing chunk {chunk_index + 1} of {total_chunks}.\n"
+            f"{summary_block}"
+            "Use the numbered English sentences below to decide where scenes start and end.\n"
+            "Create a new scene only when the narrative clearly shifts—such as a change in setting, time, perspective, or major story beat.\n"
+            "If the sentences continue the same moment, keep them together even if the scene is longer than usual; scene boundaries matter more than raw length.\n"
             "Return JSON with an array named 'scenes'. Each scene must have fields:\n"
             "- title: short descriptive title\n"
             "- summary: one or two sentences in English summarizing the scene\n"
-            "- content: the exact French text for that scene\n"
+            "- start_sentence_index: 1-based index of the first sentence in this chunk that belongs to the scene\n"
+            "- end_sentence_index: 1-based index of the last sentence in this chunk that belongs to the scene\n"
+            "  (both indices are inclusive and must satisfy 1 <= start_sentence_index <= end_sentence_index <= number of sentences listed)\n"
             "If a scene begins before this chunk, include only the portion present here and set 'continues_from_previous' to true.\n"
             "If a scene continues in the next chunk, set 'continues_to_next' to true.\n"
-            "Do not invent text. Preserve sentence order. Ensure all text from the chunk is covered without duplicating content already covered in prior scenes.\n"
-            "Input chunk text:\n"
-            f"{text}"
+            "Do not invent text. Preserve sentence order. Ensure all sentences in this chunk are assigned to exactly one scene.\n"
+            "Numbered English sentences:\n"
+            f"{sentences_block}"
         )
         payload = self._generate_json(prompt)
         scenes = payload.get("scenes", [])
