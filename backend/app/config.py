@@ -26,6 +26,8 @@ class Settings(BaseSettings):
 
     max_segment_tokens: int = Field(default=512, alias="LECTEUR_MAX_SEGMENT_TOKENS")
     max_retry_attempts: int = Field(default=3, alias="LECTEUR_MAX_RETRY_ATTEMPTS")
+    max_prompt_chars: int = Field(default=28000, alias="LECTEUR_MAX_PROMPT_CHARS")
+    max_translation_sentences: int = Field(default=150, alias="LECTEUR_MAX_TRANSLATION_SENTENCES")
 
     @computed_field(return_type=list[str])
     @property
