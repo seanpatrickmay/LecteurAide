@@ -18,6 +18,7 @@ class SentenceChunk:
     sentence_end: int  # exclusive
     english_sentences: list[str]
     french_sentences: list[str]
+    char_count: int
 
 
 def chunk_text(
@@ -76,6 +77,7 @@ def chunk_sentence_pairs(
     max_tokens: int,
     overlap_ratio: float = 0.1,
     min_chunk_tokens: int = 128,
+    max_chunk_chars: int | None = None,
 ) -> list[SentenceChunk]:
     """
     Group aligned French/English sentences into chunks sized for LLM prompts.
@@ -95,6 +97,9 @@ def chunk_sentence_pairs(
     if len(english_sentences) < total_sentences:
         english_sentences = english_sentences + [""] * (total_sentences - len(english_sentences))
 
+    if max_chunk_chars is None or max_chunk_chars <= 0:
+        max_chunk_chars = approx_chars
+
     chunks: list[SentenceChunk] = []
     start = 0
     chunk_index = 0
@@ -109,12 +114,15 @@ def chunk_sentence_pairs(
             fr_sentence = french_sentences[end]
             en_sentence = english_sentences[end]
 
+            sentence_chars = len(en_sentence) if en_sentence else len(fr_sentence)
+            sentence_chars = max(sentence_chars, 1)
+
+            if measured_chars + sentence_chars > max_chunk_chars and english_chunk:
+                break
+
             french_chunk.append(fr_sentence)
             english_chunk.append(en_sentence)
-
-            sentence_chars = len(en_sentence) if en_sentence else len(fr_sentence)
-            # Avoid zero-length increments so we always advance.
-            measured_chars += max(sentence_chars, 1)
+            measured_chars += sentence_chars
             end += 1
 
             if measured_chars >= approx_chars:
@@ -130,6 +138,7 @@ def chunk_sentence_pairs(
                 sentence_end=end,
                 english_sentences=english_chunk,
                 french_sentences=french_chunk,
+                char_count=measured_chars,
             )
         )
         chunk_index += 1

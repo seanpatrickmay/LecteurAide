@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import logging
 from typing import Any
 
 import vertexai
@@ -25,6 +26,9 @@ class GeminiService:
         self._max_retry = max(1, settings.max_retry_attempts)
 
     def _generate_json(self, prompt: str) -> Any:
+        logger = logging.getLogger(__name__)
+        logger.info("Sending Gemini request with prompt length=%d", len(prompt))
+        print(f"[Gemini Debug] sending prompt length={len(prompt)}", flush=True)
         retryer = Retrying(
             wait=wait_exponential(multiplier=1, min=1, max=10),
             stop=stop_after_attempt(self._max_retry),
@@ -33,14 +37,17 @@ class GeminiService:
 
         for attempt in retryer:
             with attempt:
+                print(f"[Gemini Debug] Starting Gemini Request", flush=True)
                 response = self._model.generate_content(prompt, generation_config=self._generation_config)
+                print(f"[Gemini Debug] Gemini Request Recieved", flush=True)
+
                 text_content = getattr(response, "text", None)
                 if not text_content:
                     raise ValueError("Vertex AI response did not contain text content.")
                 try:
                     return json.loads(text_content)
                 except json.JSONDecodeError as exc:
-                    raise ValueError("Vertex AI response was not valid JSON.") from exc
+                    raise ValueError(f"Vertex AI response was not valid JSON. {text_content}") from exc
 
         raise RuntimeError("Vertex AI request failed after retries.")
 
@@ -74,6 +81,8 @@ class GeminiService:
             f"{summary_block}"
             "Use the numbered English sentences below to decide where scenes start and end.\n"
             "Create a new scene only when the narrative clearly shifts—such as a change in setting, time, perspective, or major story beat.\n"
+            "Aim for scenes that cover no more than roughly two printed pages (about 750-1000 words or ~4000 characters).\n"
+            "If the text keeps going beyond that length without a major shift, introduce a new scene and mark it as continuing.\n"
             "If the sentences continue the same moment, keep them together even if the scene is longer than usual; scene boundaries matter more than raw length.\n"
             "Return JSON with an array named 'scenes'. Each scene must have fields:\n"
             "- title: short descriptive title\n"
@@ -99,7 +108,7 @@ class GeminiService:
             "Given the original French scene text and English translations, identify key vocabulary terms.\n"
             "Return JSON with an array named 'vocabulary'. Each item must have:\n"
             "- term: the French word or expression\n"
-            "- part_of_speech: optional abbreviated part of speech (e.g., 'n.', 'v.', 'adj.')\n"
+            "- part_of_speech: part of speech (e.g., 'noun', 'verb', 'adjective')\n"
             "- definition: short English definition\n"
             "- example_sentence: the French sentence using the term\n"
             "Focus on non-trivial, scene-specific vocabulary.\n"

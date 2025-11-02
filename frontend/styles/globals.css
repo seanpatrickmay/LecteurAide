@@ -5,6 +5,7 @@
   --accent-light: #c4703b;
   --border: #d9c8b4;
   --surface: #fffaf0;
+  --paper: #fdf8f1;
 }
 
 * {
@@ -229,16 +230,106 @@ a {
   box-shadow: 0 14px 30px rgba(47, 42, 38, 0.18);
 }
 
+
 .viewer-layout {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  grid-template-columns: minmax(0, 640px) minmax(260px, 1fr);
   gap: 2rem;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
+  justify-content: center;
 }
+
+.viewer-layout.reading-mode {
+  grid-template-columns: minmax(0, 1280px);
+  gap: 0;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.viewer-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.button.toggle.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.text-size-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.text-size-controls .muted {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.text-size-buttons {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.text-size-buttons .button {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+}
+
 
 .scene-main {
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 2.5rem clamp(1.75rem, 4vw, 2.75rem);
+  box-shadow: 0 20px 45px rgba(47, 42, 38, 0.12);
+  border: 1px solid var(--border);
+  height: 100%;
+}
+
+.viewer-layout.reading-mode .scene-main {
+  position: relative;
+  max-width: 1280px;
+  padding: 3rem clamp(2.5rem, 4vw, 3.25rem);
+  border-radius: 18px;
+  background: #fdf9f2;
+  border: 1px solid rgba(47, 42, 38, 0.1);
+  box-shadow: 0 35px 60px rgba(47, 42, 38, 0.22);
+}
+
+.viewer-layout.reading-mode .scene-main::before,
+.viewer-layout.reading-mode .scene-main::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.55), transparent 65%);
+  z-index: 0;
+}
+
+.viewer-layout.reading-mode .scene-main::before {
+  left: 0;
+  border-right: 1px solid rgba(47, 42, 38, 0.08);
+}
+
+.viewer-layout.reading-mode .scene-main::after {
+  right: 0;
+  border-left: 1px solid rgba(47, 42, 38, 0.08);
+}
+
+.viewer-layout.reading-mode .scene-main > * {
+  position: relative;
+  z-index: 1;
 }
 
 .scene-header {
@@ -263,11 +354,22 @@ a {
 }
 
 .scene-body {
-  line-height: 1.75;
-  font-size: 1.1rem;
+  line-height: calc(1.75 * var(--text-scale, 1));
+  font-size: calc(1.1rem * var(--text-scale, 1));
   text-align: justify;
   white-space: normal;
 }
+
+.viewer-layout.reading-mode .scene-body {
+  column-count: 2;
+  column-gap: clamp(3rem, 6vw, 4rem);
+  column-rule: 1px solid rgba(47, 42, 38, 0.08);
+}
+
+.viewer-layout.reading-mode .scene-body .sentence {
+  break-inside: avoid;
+}
+
 
 .sentence {
   position: relative;
@@ -278,7 +380,7 @@ a {
   font: inherit;
   display: inline;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .sentence::after {
@@ -291,12 +393,15 @@ a {
 
 .sentence:hover,
 .sentence:focus-visible {
-  background: rgba(160, 82, 45, 0.08);
+  color: var(--accent);
 }
 
 .sentence.active {
-  background: rgba(160, 82, 45, 0.18);
   color: var(--accent-light);
+}
+
+.sentence.flash {
+  animation: flashHighlight 1.2s ease;
 }
 
 .scene-side {
@@ -305,7 +410,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  height: fit-content;
+  min-height: 100%;
 }
 
 .scene-bubble {
@@ -344,6 +449,10 @@ a {
   justify-content: flex-start;
 }
 
+.scene-navigation.bottom {
+  margin-top: 2rem;
+}
+
 .nav-button {
   background: transparent;
   border: none;
@@ -366,6 +475,65 @@ a {
   transform: none;
 }
 
+.scene-progress {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.questions-section {
+  margin-top: 2rem;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.scene-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(47, 42, 38, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.scene-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.scene-transition {
+  animation: sceneFade 0.35s ease;
+}
+
+@keyframes sceneFade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes flashHighlight {
+  0% {
+    color: var(--accent);
+  }
+  50% {
+    color: var(--accent-light);
+  }
+  100% {
+    color: inherit;
+  }
+}
+
 .vocab-list {
   list-style: none;
   padding: 0;
@@ -383,6 +551,50 @@ a {
 .vocab-definition {
   font-size: 0.95rem;
   color: rgba(47, 42, 38, 0.75);
+}
+
+.vocab-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.vocab-group-title {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(47, 42, 38, 0.65);
+}
+
+.vocab-term-button {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border 0.2s ease, transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.vocab-term-button:hover,
+.vocab-term-button:focus-visible {
+  background: rgba(160, 82, 45, 0.1);
+  border-color: rgba(160, 82, 45, 0.3);
+  transform: translateY(-1px);
+}
+
+.vocab-term-button .vocab-term {
+  font-size: 1rem;
+}
+
+.vocab-term-button .vocab-definition {
+  font-size: 0.9rem;
+  color: rgba(47, 42, 38, 0.7);
 }
 
 .questions-section {
@@ -488,6 +700,7 @@ a {
 @media (max-width: 960px) {
   .viewer-layout {
     grid-template-columns: 1fr;
+    gap: 1.75rem;
   }
 
   .scene-side {
@@ -498,5 +711,15 @@ a {
 
   .scene-bubble {
     flex: 1 1 240px;
+    margin: 0;
+  }
+
+  .scene-bubble::before {
+    display: none;
+  }
+
+  .scene-body {
+    column-count: 1;
+    column-rule: none;
   }
 }
